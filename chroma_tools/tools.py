@@ -1,13 +1,15 @@
+import os
 import uuid
 from langchain_core.tools import tool
 from langchain_chroma import Chroma
-# Cambiamos la importación para usar el ecosistema de Ollama local
-from langchain_ollama import OllamaEmbeddings 
+from langchain_openai import OpenAIEmbeddings
 
-# Inicializar los embeddings usando tu modelo local de Ollama
-# Asegúrate de que Ollama esté corriendo en tu máquina ('ollama serve')
-embeddings = OllamaEmbeddings(
-    model="qwen3-embedding:latest"
+# Inicializar embeddings usando una API compatible con OpenAI.
+embeddings = OpenAIEmbeddings(
+    model=os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small"),
+    base_url=os.getenv("EMBEDDINGS_BASE_URL"),
+    api_key=os.getenv("EMBEDDINGS_API_KEY") or os.getenv("OPENAI_API_KEY"),
+    check_embedding_ctx_length=False,
 )
 
 # Configurar/Conectar a la base de datos persistente de Chroma
@@ -37,7 +39,7 @@ def index_python_chunk(content: str, category: str = "general") -> str:
             metadatas=[metadata],
             ids=[doc_id]
         )
-        return f"Éxito: Chunk indexado correctamente en el banco 'Python' con ID: {doc_id} usando Qwen3-Embedding."
+        return f"Éxito: Chunk indexado correctamente en el banco 'Python' con ID: {doc_id}."
     except Exception as e:
         return f"Error al indexar en Chroma: {str(e)}"
 
@@ -53,6 +55,8 @@ def retrieve_python_knowledge(query: str, category: str = None) -> str:
         
         # Realizar la búsqueda por similitud (k=3 fragmentos relevantes)
         results = vector_store.similarity_search(query, k=3, filter=search_filter)
+        if not results and search_filter:
+            results = vector_store.similarity_search(query, k=3)
         
         if not results:
             return "No se encontró información relevante en el banco de conocimiento de Python."
