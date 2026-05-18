@@ -1,0 +1,5 @@
+Nombre: Luis Baez
+Edad: 36 años
+Ubicación: Puerto Rico
+Meta: Ser ingeniero de IA aprendiendo los frameworks que estén dominando la industria en 2026.
+Fecha de registro: 2026-05-17
