@@ -25,7 +25,6 @@ from deepagents import create_deep_agent
 from deepagents.middleware.subagents import SubAgent
 from deepagents.backends import FilesystemBackend, StateBackend, CompositeBackend
 from deepagents.backends.protocol import FileData, GlobResult, GrepResult, LsResult, ReadResult
-from copilotkit import CopilotKitMiddleware
 
 ## Importaciones para el Backend PostGress
 from deepagents_backends import PostgresBackend, PostgresConfig
@@ -392,7 +391,7 @@ agent = create_deep_agent(
     backend=composite_backend,
     system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
     tools=[retrieve_python_knowledge, inspect_collection_stats],
-    middleware=[CopilotKitMiddleware()],
+    middleware=[],
     subagents=subagents,
 )
 
