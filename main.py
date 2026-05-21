@@ -1,16 +1,3 @@
-# /// script
-# requires-python = ">=3.12"
-# dependencies = [
-#     "chromadb>=1.5.9",
-#     "copilotkit>=0.1.89",
-#     "deepagents>=0.6.1",
-#     "langchain-chroma>=1.1.0",
-#     "langchain-ollama>=1.1.0",
-#     "langchain-openai>=1.2.1",
-#     "deepagents-backends @ git+https://github.com/DiTo97/deepagents-backends.git"
-# ]
-# ///
-
 #!/usr/bin/env python3
 import os
 import sys
