@@ -1,13 +1,12 @@
 [project]
-name = "deep-agents-notebook"
+name = "agentvault"
 version = "0.1.0"
-description = "Add a short description here"
+description = "YAML-driven multi-agent orchestration with ChromaDB knowledge and Gmail automation via Zapier MCP"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "chromadb>=1.5.9",
     "deepagents>=0.6.1",
-    "neo4j>=6.1.0",
     "deepagents-backends",
     "langchain-chroma>=1.1.0",
     "langchain-ollama>=1.1.0",
@@ -16,6 +15,16 @@ dependencies = [
     "langgraph-cli>=0.4.26",
     "fastmcp>=3.3.1",
 ]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"agentvault.agents" = ["*.yml"]
 
 [tool.uv.sources]
 deepagents-backends = { git = "https://github.com/DiTo97/deepagents-backends.git" }

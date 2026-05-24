@@ -1,16 +1,24 @@
 
-# LangGraph API
-.langgraph_api
-
 # Local environment
 .env
 
-# Python virtualenv
+# Python virtualenv & cache
 .venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.pckl
 
-# Node / Next build outputs
-frontend/.next/
-node_modules/
+# Runtime data (chroma vectors, chunks, agent state)
+data/
 
 # Jupyter
+notebooks/
 .ipynb_checkpoints/
+
+# LangGraph API (auto-generated)
+.langgraph_api
+
+# Node / Next build outputs (frontend coverage)
+deep-agents-ui/.next/
+node_modules/

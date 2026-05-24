@@ -1,0 +1,16 @@
+.git/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.langgraph_api/
+.env
+data/
+notebooks/
+.ipynb_checkpoints/
+deep-agents-ui/.next/
+deep-agents-ui/node_modules/
+deep-agents-ui/.env*.local
+deep-agents-ui/
+Dockerfile
+docker-compose*.yml

@@ -14,10 +14,10 @@ _vector_store: Optional[Chroma] = None
 
 
 def ensure_vector_store() -> tuple[OllamaEmbeddings, Chroma]:
-    """Inicializa y devuelve (embeddings, vector_store).
+    """Initializes and returns (embeddings, vector_store).
 
-    Lanza RuntimeError con un mensaje claro si la inicialización de la
-    infraestructura bajo demanda falla.
+    Raises RuntimeError with a clear message if the on-demand
+    infrastructure initialization fails.
     """
     global _embeddings, _vector_store
     if _embeddings is not None and _vector_store is not None:
@@ -32,22 +32,22 @@ def ensure_vector_store() -> tuple[OllamaEmbeddings, Chroma]:
         _vector_store = Chroma(
             collection_name="python_knowledge",
             embedding_function=_embeddings,
-            persist_directory="./chroma_db",
+            persist_directory="./data/chroma_db",
         )
         return _embeddings, _vector_store
     except Exception as e:
-        raise RuntimeError(f"No se pudo inicializar embeddings/Chroma: {e}")
+        raise RuntimeError(f"Failed to initialize embeddings/Chroma: {e}")
 
 
 # =====================================================================
-# NÚCLEO RAG (HERRAMIENTAS PARA AGENTES)
+# RAG CORE (AGENT TOOLS)
 # =====================================================================
 
 @tool
 def index_python_chunk(content: str, category: str = "general") -> str:
-    """Indexa un fragmento (chunk) de código o documentación de Python en el banco de conocimiento.
+    """Indexes a chunk of Python code or documentation into the knowledge bank.
     
-    Usa esta herramienta cuando descubras o generes información valiosa sobre Python que deba recordarse.
+    Use this tool when you discover or generate valuable Python information that should be remembered.
     """
     try:
         _, store = ensure_vector_store()
@@ -59,15 +59,15 @@ def index_python_chunk(content: str, category: str = "general") -> str:
             metadatas=[metadata],
             ids=[doc_id]
         )
-        return f"Éxito: Chunk indexado correctamente en el banco 'Python' con ID: {doc_id}."
+        return f"Success: Chunk successfully indexed in the knowledge bank with ID: {doc_id}."
     except Exception as e:
-        return f"Error al indexar en Chroma: {e}"
+        return f"Error indexing into Chroma: {e}"
 
 
 @tool
 def retrieve_python_knowledge(query: str, category: Optional[str] = None) -> str:
-    """Busca de manera semántica información, soluciones, payloads o documentación sobre Python 
-    dentro del banco de conocimiento. Retorna los fragmentos más relevantes.
+    """Semantically searches for information, solutions, payloads, or documentation about Python 
+    within the knowledge bank. Returns the most relevant fragments.
     """
     try:
         _, store = ensure_vector_store()
@@ -78,53 +78,53 @@ def retrieve_python_knowledge(query: str, category: Optional[str] = None) -> str
             results = store.similarity_search(query, k=3)
 
         if not results:
-            return "No se encontró información relevante en el banco de conocimiento de Python."
+            return "No relevant information found in the Python knowledge bank."
 
         formatted_results = []
         for i, doc in enumerate(results, 1):
             meta = getattr(doc, 'metadata', {}) or getattr(doc, 'metadata_', {}) or {}
             content = getattr(doc, 'page_content', None) or getattr(doc, 'content', None) or str(doc)
-            formatted_results.append(f"--- Resultado {i} (Categoría: {meta.get('category')}) ---\n{content}\n")
+            formatted_results.append(f"--- Result {i} (Category: {meta.get('category')}) ---\n{content}\n")
 
         return "\n".join(formatted_results)
     except Exception as e:
-        return f"Error al realizar el retrieval en Chroma: {e}"
+        return f"Error performing Chroma retrieval: {e}"
 
 
 # =====================================================================
-# HERRAMIENTAS DE CONTROL TOTAL (CRUD & INGENIERÍA)
+# FULL CONTROL TOOLS (CRUD & ENGINEERING)
 # =====================================================================
 
 @tool
 def delete_python_knowledge(ids: Optional[List[str]] = None, filter_dict: Optional[Dict[str, Any]] = None) -> str:
-    """Borra registros específicos de la base de datos de vectores.
+    """Deletes specific records from the vector database.
     
-    Puedes borrar pasando una lista explícita de 'ids' O proporcionando un 'filter_dict' 
-    (ej. {"category": "deprecated_payloads"}) para borrados masivos basados en metadatos.
+    You can delete by passing an explicit list of 'ids' OR by providing a 'filter_dict'
+    (e.g. {"category": "deprecated_payloads"}) for bulk deletions based on metadata.
     """
     try:
         _, store = ensure_vector_store()
 
         if ids:
             store.delete(ids=ids)
-            return f"Éxito: Se eliminaron correctamente los registros con IDs: {ids}."
+            return f"Success: Records with IDs {ids} were deleted successfully."
         
         if filter_dict:
             collection = store._collection
             collection.delete(where=filter_dict)
-            return f"Éxito: Se eliminaron los vectores que coinciden con el filtro: {filter_dict}."
+            return f"Success: Vectors matching filter {filter_dict} were deleted successfully."
             
-        return "Error: Debes proporcionar al menos una lista de 'ids' o un 'filter_dict' para ejecutar el borrado."
+        return "Error: You must provide at least a list of 'ids' or a 'filter_dict' to execute the deletion."
     except Exception as e:
-        return f"Error al eliminar registros en Chroma: {e}"
+        return f"Error deleting records from Chroma: {e}"
 
 
 @tool
 def update_or_upsert_knowledge(doc_id: str, content: Optional[str] = None, metadata_updates: Optional[Dict[str, Any]] = None) -> str:
-    """Actualiza de forma quirúrgica el contenido, los metadatos o ambos de un vector existente usando su ID.
+    """Surgically updates the content, metadata, or both of an existing vector using its ID.
     
-    Si cambias el contenido, el embedding se recalculará automáticamente. Las actualizaciones de 
-    metadatos se fusionarán con las existentes o las sobrescribirán.
+    If you change the content, the embedding will be recalculated automatically. Metadata
+    updates will be merged with existing ones or overwrite them.
     """
     try:
         _, store = ensure_vector_store()
@@ -132,7 +132,7 @@ def update_or_upsert_knowledge(doc_id: str, content: Optional[str] = None, metad
         current_data = collection.get(ids=[doc_id])
         
         if not current_data or not current_data['ids']:
-            return f"Error: No se encontró ningún documento con el ID: {doc_id}."
+            return f"Error: No document found with ID: {doc_id}."
         
         current_metadata = current_data['metadatas'][0] if current_data['metadatas'] else {}
         if metadata_updates:
@@ -142,22 +142,22 @@ def update_or_upsert_knowledge(doc_id: str, content: Optional[str] = None, metad
         if content:
             updated_doc = Document(page_content=content, metadata=current_metadata)
             store.update_documents(ids=[doc_id], documents=[updated_doc])
-            return f"Éxito: Contenido y embeddings actualizados para el ID: {doc_id}."
+            return f"Success: Content and embeddings updated for ID: {doc_id}."
             
-        # 2. Mutación exclusiva de metadatos (Sin recalcular embeddings, rápido)
+        # 2. Exclusive metadata mutation (No embedding recalculation, fast)
         if metadata_updates:
             collection.update(ids=[doc_id], metadatas=[current_metadata])
-            return f"Éxito: Metadatos actualizados quirúrgicamente para el ID: {doc_id}."
+            return f"Success: Metadata surgically updated for ID: {doc_id}."
             
-        return "Advertencia: No se proporcionaron cambios ni de contenido ni de metadatos."
+        return "Warning: Neither content nor metadata changes were provided."
     except Exception as e:
-        return f"Error al actualizar el conocimiento en Chroma: {e}"
+        return f"Error updating knowledge in Chroma: {e}"
 
 
 @tool
 def inspect_collection_stats(limit: int = 10, offset: int = 0) -> str:
-    """Inspecciona el estado interno del banco de conocimiento. Retorna el conteo total de 
-    vectores indexados y una lista paginada de los IDs con sus respectivos metadatos.
+    """Inspects the internal state of the knowledge bank. Returns the total count of
+    indexed vectors and a paginated list of IDs with their respective metadata.
     """
     try:
         _, store = ensure_vector_store()
@@ -165,20 +165,20 @@ def inspect_collection_stats(limit: int = 10, offset: int = 0) -> str:
         total_count = collection.count()
         
         if total_count == 0:
-            return "El banco de conocimiento está vacío actualmente."
+            return "The knowledge bank is currently empty."
             
         peek_data = collection.get(limit=limit, offset=offset, include=["metadatas"])
         
         summary = [
-            "=== ESTADO DEL BANCO DE CONOCIMIENTO ===",
-            f"Total de vectores indexados: {total_count}",
-            f"Mostrando registros del {offset} al {offset + len(peek_data['ids'])}:\n"
+            "=== KNOWLEDGE BANK STATUS ===",
+            f"Total indexed vectors: {total_count}",
+            f"Showing records from {offset} to {offset + len(peek_data['ids'])}:\n"
         ]
         
         for i, doc_id in enumerate(peek_data['ids']):
             meta = peek_data['metadatas'][i] if peek_data['metadatas'] else {}
-            summary.append(f"-> ID: {doc_id} | Metadatos: {meta}")
+            summary.append(f"-> ID: {doc_id} | Metadata: {meta}")
             
         return "\n".join(summary)
     except Exception as e:
-        return f"Error al inspeccionar la colección Chroma: {e}"
+        return f"Error inspecting Chroma collection: {e}"

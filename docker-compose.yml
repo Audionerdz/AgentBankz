@@ -1,22 +1,90 @@
 services:
-  neo4j:
-    image: neo4j:2025.03-community
-    container_name: deepagents-neo4j
-    ports:
-      - "7687:7687"
-      - "7474:7474"
+  postgres:
+    image: postgres:16-alpine
     environment:
-      NEO4J_AUTH: neo4j/deepagents
-      NEO4J_PLUGINS: '["apoc"]'
-      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-agentvault}
+      POSTGRES_DB: ${DB_NAME:-agentvault}
+    ports:
+      - "5432:5432"
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-      - neo4j_import:/var/lib/neo4j/import
-      - neo4j_plugins:/plugins
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: pull ${EMBEDDINGS_MODEL:-qwen3-embedding:latest}
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-agentvault}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-agentvault}
+      DB_SCHEMA: ${DB_SCHEMA:-public}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-qwen3-embedding:latest}
+      OLLAMA_BASE_URL: http://ollama:11434
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8123
+      LANGGRAPH_DEPLOYMENT_URL: http://localhost:8123
+    ports:
+      - "8123:8123"
+    volumes:
+      - agentvault-data:/app/data
+
+  frontend:
+    build:
+      context: ./deep-agents-ui
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_LANGGRAPH_DEPLOYMENT_URL: http://localhost:8123
+        NEXT_PUBLIC_ASSISTANT_ID: sample_agent
+        NEXT_PUBLIC_LANGSMITH_API_KEY: ${NEXT_PUBLIC_LANGSMITH_API_KEY:-}
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_LANGGRAPH_DEPLOYMENT_URL: http://localhost:8123
+      NEXT_PUBLIC_ASSISTANT_ID: sample_agent
+      NEXT_PUBLIC_LANGSMITH_API_KEY: ${NEXT_PUBLIC_LANGSMITH_API_KEY:-}
+    ports:
+      - "3000:3000"
 
 volumes:
-  neo4j_data:
-  neo4j_logs:
-  neo4j_import:
-  neo4j_plugins:
+  postgres-data:
+  ollama-data:
+  agentvault-data:
