@@ -1,4 +1,4 @@
-# AgentVault — Beginner's Guide
+# AgentBankz — Beginner's Guide
 
 > Everything you need to know to extend, modify, and understand this repo.
 
@@ -24,7 +24,7 @@
 
 ## 1. How the YAML Config Works
 
-The configuration is split across **3 files** under `src/agentvault/agents/`. The loader merges them automatically at startup.
+The configuration is split across **3 files** under `src/agentbankz/agents/`. The loader merges them automatically at startup.
 
 ### `defaults.yml` — Global defaults
 
@@ -93,7 +93,7 @@ Tools are Python functions decorated with `@tool` from `langchain_core.tools`. T
 
 **Step 1: Write the tool function**
 
-In `src/agentvault/tools/knowledge.py`:
+In `src/agentbankz/tools/knowledge.py`:
 
 ```python
 @tool
@@ -114,10 +114,10 @@ def count_python_knowledge() -> str:
 
 **Step 2: Register it in the tool map**
 
-In `src/agentvault/agents/loader.py`, add to `STATIC_TOOL_MAP`:
+In `src/agentbankz/agents/loader.py`, add to `STATIC_TOOL_MAP`:
 
 ```python
-from agentvault.tools.knowledge import (
+from agentbankz.tools.knowledge import (
     count_python_knowledge,   # <-- add this import
     delete_python_knowledge,
     index_python_chunk,
@@ -136,7 +136,7 @@ STATIC_TOOL_MAP = {
 **Step 3: Verify**
 
 ```powershell
-uv run python -c "from agentvault.tools.knowledge import count_python_knowledge; print(count_python_knowledge.invoke({}))"
+uv run python -c "from agentbankz.tools.knowledge import count_python_knowledge; print(count_python_knowledge.invoke({}))"
 ```
 
 **Step 4 (optional):** Assign it to a subagent or orchestrator in YAML (see next section).
@@ -218,7 +218,7 @@ Dynamic subagents are created at **runtime** from tools discovered by an externa
 
 **Step 1:** Create a builder function
 
-Create `src/agentvault/agents/slack.py`:
+Create `src/agentbankz/agents/slack.py`:
 
 ```python
 from typing import Any
@@ -252,7 +252,7 @@ def build_slack_subagents(slack_tools: list[Any], model: str) -> list[SubAgent]:
 
 **Step 2:** Create a Slack tool factory
 
-Create `src/agentvault/tools/slack.py`:
+Create `src/agentbankz/tools/slack.py`:
 
 ```python
 # Slack MCP tool creation (similar to tools/zapier.py)
@@ -260,10 +260,10 @@ Create `src/agentvault/tools/slack.py`:
 
 **Step 3:** Register the new `source:` type in the loader
 
-In `src/agentvault/agents/loader.py`:
+In `src/agentbankz/agents/loader.py`:
 
 ```python
-from agentvault.agents.slack import build_slack_subagents
+from agentbankz.agents.slack import build_slack_subagents
 
 def build_all_subagents(config, tool_map, zapier_tools, slack_tools=None):
     ...
@@ -514,7 +514,7 @@ A backend handles **file storage** for the agent's virtual filesystem.
 
 ### Step 1: Implement the interface
 
-In `src/agentvault/backends/`, create `s3.py`:
+In `src/agentbankz/backends/`, create `s3.py`:
 
 ```python
 import json
@@ -560,7 +560,7 @@ class S3Backend:
 
 ### Step 2: Register in BackendFactory
 
-In `src/agentvault/backends/factory.py`:
+In `src/agentbankz/backends/factory.py`:
 
 ```python
 from .s3 import S3Backend
@@ -568,7 +568,7 @@ from .s3 import S3Backend
 class BackendFactory:
     def build_all(self) -> dict[str, Any]:
         s3_backend = S3Backend(
-            bucket=os.getenv("S3_BUCKET", "agentvault-data"),
+            bucket=os.getenv("S3_BUCKET", "agentbankz-data"),
             prefix="memories/",
         )
         return {
@@ -738,17 +738,17 @@ uv run python -m compileall main.py src
 
 # 2. Check all imports resolve
 uv run python -c "
-from agentvault.agents import OrchestratorFactory
-from agentvault.agents.gmail import build_gmail_subagents
-from agentvault.backends import BackendFactory
-from agentvault.tools.knowledge import index_python_chunk, retrieve_python_knowledge, delete_python_knowledge, update_or_upsert_knowledge, inspect_collection_stats
+from agentbankz.agents import OrchestratorFactory
+from agentbankz.agents.gmail import build_gmail_subagents
+from agentbankz.backends import BackendFactory
+from agentbankz.tools.knowledge import index_python_chunk, retrieve_python_knowledge, delete_python_knowledge, update_or_upsert_knowledge, inspect_collection_stats
 print('All imports OK')
 "
 
 # 3. Check the YAML config loads correctly
 uv run python -c "
-from agentvault.agents.loader import load_agent_configs
-cfg = load_agent_configs('src/agentvault/agents')
+from agentbankz.agents.loader import load_agent_configs
+cfg = load_agent_configs('src/agentbankz/agents')
 print('Model:', cfg.get('model'))
 print('Subagents:', list(cfg.get('subagents', {}).keys()))
 print('Orchestrators:', list(cfg.get('orchestrators', {}).keys()))
@@ -756,7 +756,7 @@ print('Orchestrators:', list(cfg.get('orchestrators', {}).keys()))
 
 # 4. Check Chroma connection
 uv run python -c "
-from agentvault.tools.knowledge import inspect_collection_stats
+from agentbankz.tools.knowledge import inspect_collection_stats
 print(inspect_collection_stats.invoke({'limit': 3}))
 "
 ```
@@ -847,18 +847,18 @@ If your orchestrator needs a completely different storage strategy, create a new
 
 | What you want to do | File to edit |
 |---|---|
-| Add a new tool function | `src/agentvault/tools/knowledge.py` |
-| Register a tool so YAML can find it | `src/agentvault/agents/loader.py` (add to `STATIC_TOOL_MAP`) |
-| Add/remove a subagent | `src/agentvault/agents/subagents.yml` |
-| Add/remove an orchestrator | `src/agentvault/agents/orchestrators.yml` |
-| Change a subagent system prompt | `src/agentvault/agents/subagents.yml` |
-| Change the orchestrator system prompt | `src/agentvault/agents/orchestrators.yml` |
-| Change the default model | `src/agentvault/agents/defaults.yml` |
-| Override model per orchestrator | `src/agentvault/agents/orchestrators.yml` |
+| Add a new tool function | `src/agentbankz/tools/knowledge.py` |
+| Register a tool so YAML can find it | `src/agentbankz/agents/loader.py` (add to `STATIC_TOOL_MAP`) |
+| Add/remove a subagent | `src/agentbankz/agents/subagents.yml` |
+| Add/remove an orchestrator | `src/agentbankz/agents/orchestrators.yml` |
+| Change a subagent system prompt | `src/agentbankz/agents/subagents.yml` |
+| Change the orchestrator system prompt | `src/agentbankz/agents/orchestrators.yml` |
+| Change the default model | `src/agentbankz/agents/defaults.yml` |
+| Override model per orchestrator | `src/agentbankz/agents/orchestrators.yml` |
 | Add a dynamic MCP source (Slack, etc.) | Create `agents/<name>.py` + update `loader.py` |
 | Add a new storage backend | Create `backends/<name>.py` + update `backends/factory.py` |
 | Change the entry point | `main.py` (~7 lines, rarely touched) |
-| Change Zapier connection behavior or tool schema handling | `src/agentvault/tools/zapier.py` |
-| Change Gmail subagent prompts | `src/agentvault/agents/gmail.py` |
+| Change Zapier connection behavior or tool schema handling | `src/agentbankz/tools/zapier.py` |
+| Change Gmail subagent prompts | `src/agentbankz/agents/gmail.py` |
 | Add a dependency | `pyproject.toml` (then `uv sync`) |
 | Add a secret | `.env` |

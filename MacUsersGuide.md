@@ -1,6 +1,6 @@
 # macOS Setup Guide
 
-Run AgentVault natively on macOS without Docker.
+Run AgentBankz natively on macOS without Docker.
 
 ---
 
@@ -37,7 +37,7 @@ Homebrew creates a default `postgres` superuser automatically. If you get authen
 
 ```bash
 # Create the postgres role with a password
-psql -c "ALTER USER postgres PASSWORD 'agentvault';"
+psql -c "ALTER USER postgres PASSWORD 'agentbankz';"
 ```
 
 ### Create the application database (optional)
@@ -48,7 +48,7 @@ The app auto-creates the database on first run, but you can do it manually:
 createdb deepagents
 ```
 
-> **Note:** The code defaults to `DB_NAME=deepagents`. If you set `DB_NAME=agentvault` in `.env`, use `createdb agentvault` instead. Just keep them consistent.
+> **Note:** The code defaults to `DB_NAME=deepagents`. If you set `DB_NAME=agentbankz` in `.env`, use `createdb agentbankz` instead. Just keep them consistent.
 
 ### Test connection
 
@@ -101,7 +101,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=deepagents
 DB_USER=postgres
-DB_PASSWORD=agentvault
+DB_PASSWORD=agentbankz
 OLLAMA_BASE_URL=http://localhost:11434
 ```
 
@@ -143,7 +143,7 @@ brew services stop ollama
 dropdb deepagents && createdb deepagents
 
 # Check Chroma vector count
-uv run python -c "from agentvault.tools.knowledge import inspect_collection_stats; print(inspect_collection_stats.invoke({}))"
+uv run python -c "from agentbankz.tools.knowledge import inspect_collection_stats; print(inspect_collection_stats.invoke({}))"
 
 # Rebuild Python deps
 uv sync --frozen
@@ -157,7 +157,7 @@ uv sync --frozen
 |---------|-----|
 | `psycopg` connection error | `brew services restart postgresql@16` then `pg_isready` |
 | `role "postgres" does not exist` | `createuser -s postgres` |
-| `FATAL: password authentication failed` | Run `psql -c "ALTER USER postgres PASSWORD 'agentvault';"` |
+| `FATAL: password authentication failed` | Run `psql -c "ALTER USER postgres PASSWORD 'agentbankz';"` |
 | Ollama not responding | `brew services restart ollama` — wait 5s |
 | ChromaDB errors | Make sure Ollama is running (Chroma uses Ollama for embeddings) |
 | Frontend can't reach backend | Set `NEXT_PUBLIC_LANGGRAPH_DEPLOYMENT_URL=http://localhost:8123` |

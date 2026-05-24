@@ -1,18 +1,18 @@
-# AgentVault Architecture Guide
+# AgentBankz Architecture Guide
 
-> A comprehensive reference for extending, modifying, and scaling the AgentVault multi-agent system.
+> A comprehensive reference for extending, modifying, and scaling the AgentBankz multi-agent system.
 
 ---
 
 ## 1. Repository Map
 
 ```
-AgentVault/
+AgentBankz/
 │
 ├── main.py                              # Entry point — 7 lines of orchestration logic
 ├── pyproject.toml                       # Build config (setuptools, src/ layout)
 │
-├── src/agentvault/
+├── src/agentbankz/
 │   │
 │   ├── agents/                          # ██ ORCHESTRATOR & SUBAGENT SYSTEM ██
 │   │   ├── __init__.py                  #   Exports: OrchestratorFactory
@@ -320,7 +320,7 @@ class S3Backend:
 In `backends/factory.py`:
 
 ```python
-s3_backend = S3Backend(bucket="agentvault-data", prefix="memories/")
+s3_backend = S3Backend(bucket="agentbankz-data", prefix="memories/")
 backend_map["composite"] = CompositeBackend(
     routes={
         "/memories/": s3_backend,

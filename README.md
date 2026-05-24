@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/ollama-qwen3--embedding-8A2BE2" alt="Ollama">
 </p>
 
-<h1 align="center">AgentVault</h1>
+<h1 align="center">AgentBankz</h1>
 
 <blockquote>
   <strong>⚠️ Personal Experiment — From a simple ChromaDB CRUD agent to a full multi-agent architecture.</strong>
@@ -105,8 +105,8 @@ The frontend comes preconfigured — no manual setup needed.
 |----------|---------|----------|
 | `OPENAI_API_KEY` | — | ✅ Yes |
 | `DB_USER` | `postgres` | ❌ |
-| `DB_PASSWORD` | `agentvault` | ❌ |
-| `DB_NAME` | `agentvault` | ❌ |
+| `DB_PASSWORD` | `agentbankz` | ❌ |
+| `DB_NAME` | `agentbankz` | ❌ |
 | `EMBEDDINGS_MODEL` | `qwen3-embedding:latest` | ❌ |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | ❌ |
 | `ZAPIER_MCP_TOKEN` | — | ❌ (Gmail tools disabled) |

@@ -2,9 +2,9 @@
 import os
 import sys
 
-from agentvault.agents import OrchestratorFactory
-from agentvault.backends import BackendFactory
-from agentvault.tools.zapier import create_zapier_tools
+from agentbankz.agents import OrchestratorFactory
+from agentbankz.backends import BackendFactory
+from agentbankz.tools.zapier import create_zapier_tools
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE STORAGE Y BACKENDS (HÍBRIDO)

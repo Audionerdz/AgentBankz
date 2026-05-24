@@ -1,5 +1,5 @@
 [project]
-name = "agentvault"
+name = "agentbankz"
 version = "0.1.0"
 description = "YAML-driven multi-agent orchestration with ChromaDB knowledge and Gmail automation via Zapier MCP"
 readme = "README.md"
@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"agentvault.agents" = ["*.yml"]
+"agentbankz.agents" = ["*.yml"]
 
 [tool.uv.sources]
 deepagents-backends = { git = "https://github.com/DiTo97/deepagents-backends.git" }

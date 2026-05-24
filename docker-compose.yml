@@ -3,8 +3,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-agentvault}
-      POSTGRES_DB: ${DB_NAME:-agentvault}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-agentbankz}
+      POSTGRES_DB: ${DB_NAME:-agentbankz}
     ports:
       - "5432:5432"
     volumes:
@@ -53,9 +53,9 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-agentvault}
+      DB_NAME: ${DB_NAME:-agentbankz}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-agentvault}
+      DB_PASSWORD: ${DB_PASSWORD:-agentbankz}
       DB_SCHEMA: ${DB_SCHEMA:-public}
       EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-qwen3-embedding:latest}
       OLLAMA_BASE_URL: http://ollama:11434
@@ -65,7 +65,7 @@ services:
     ports:
       - "8123:8123"
     volumes:
-      - agentvault-data:/app/data
+      - agentbankz-data:/app/data
 
   frontend:
     build:
@@ -87,4 +87,4 @@ services:
 volumes:
   postgres-data:
   ollama-data:
-  agentvault-data:
+  agentbankz-data:

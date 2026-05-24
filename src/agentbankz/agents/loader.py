@@ -4,8 +4,8 @@ from typing import Any
 import yaml
 from deepagents.middleware.subagents import SubAgent
 
-from agentvault.agents.gmail import build_gmail_subagents
-from agentvault.tools.knowledge import (
+from agentbankz.agents.gmail import build_gmail_subagents
+from agentbankz.tools.knowledge import (
     delete_python_knowledge,
     index_python_chunk,
     inspect_collection_stats,
