@@ -1,7 +1,0 @@
-Nota 2 - Snippet de subagent wiring (según el usuario)
-
-Contenido a indexar:
-- wiring/ensamblaje de subagentes (subagent wiring)
-- composición/encadenamiento de componentes (según el snippet referido como nota 2)
-
-(El usuario solicitó indexar el snippet del subagent wiring correspondiente a 'nota 2'. Si el snippet exacto no está provisto aquí, se indexa esta referencia para posterior recuperación/ajuste.)

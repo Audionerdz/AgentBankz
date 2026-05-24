@@ -17,16 +17,26 @@ from deepagents.backends.protocol import FileData, GlobResult, GrepResult, LsRes
 from deepagents_backends import PostgresBackend, PostgresConfig
 
 # =====================================================================
-# 0. CONFIGURACIÓN DE HERRAMIENTAS (CHROMA)
+# 0. CONFIGURACIÓN DE HERRAMIENTAS (CHROMA + NEO4J)
 # =====================================================================
-# Importación directa y limpia desde tu paquete modularizado
+# Importación directa y limpia desde paquetes modularizados
 from chroma_tools import (
     index_python_chunk,
     retrieve_python_knowledge,
     delete_python_knowledge,
     update_or_upsert_knowledge,
-    inspect_collection_stats
+    inspect_collection_stats,
 )
+
+from graph_tools import (
+    graph_add_entity,
+    graph_add_relationship,
+    graph_query_entity,
+    graph_get_schema,
+    execute_cypher,
+)
+
+from zapier_tools import create_zapier_tools
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE STORAGE Y BACKENDS (HÍBRIDO)
@@ -269,6 +279,11 @@ deepagents_backend = FilesystemBackend(
     virtual_mode=True
 )
 
+graph_backend = FilesystemBackend(
+    root_dir="data/graph",
+    virtual_mode=True
+)
+
 # Crear CompositeBackend ruteando las memorias hacia PostgreSQL
 composite_backend = CompositeBackend(
     default=StateBackend(),  # Para archivos temporales efímeros en la raíz
@@ -276,6 +291,7 @@ composite_backend = CompositeBackend(
         "/memories/": memories_backend,   # Redireccionado a PostgreSQL de forma segura
         "/chunks/": chunks_backend,       # Almacenamiento en disco local
         "/deepagents/": deepagents_backend, # Almacenamiento en disco local
+        "/graph/": graph_backend,         # Archivos relacionados al grafo Neo4j
     }
 )
 
@@ -348,25 +364,85 @@ subagents = [
         ),
         model="openai:gpt-5.4-nano",
         tools=[inspect_collection_stats]
-    )
+    ),
 ]
 
+# =====================================================================
+# 1.5 INICIALIZACIÓN DE HERRAMIENTAS ZAPIER (GMAIL CRUD)
+# =====================================================================
+try:
+    zapier_tools = create_zapier_tools()
+    print(f"[INFO] Zapier MCP conectado — {len(zapier_tools)} herramientas Gmail disponibles.")
+except Exception as e:
+    print(f"[WARN] No se pudo conectar Zapier MCP: {e}")
+    print("[WARN] Las herramientas Gmail no estarán disponibles.")
+    zapier_tools = []
+
+GMAIL_ZAPIER_USAGE_GUIDE = """
+Reglas obligatorias para Gmail/Zapier:
+- Nunca uses action="search". Esa action no existe para Gmail en Zapier.
+- Para buscar o leer correos, usa execute_zapier_read_action con app="gmail", action="message" y params={"query": "..."}.
+- Para enviar correos, usa execute_zapier_write_action con app="gmail", action="message" y params con to, subject y body.
+- Para borrar correos, usa execute_zapier_write_action con app="gmail", action="delete_email" y params={"message_id": "..."}.
+- Para adjuntos, usa execute_zapier_read_action con app="gmail", action="attachment".
+- Si no sabes los parámetros exactos, primero llama list_enabled_zapier_actions con app="gmail" y action igual a la key real.
+- Usa solo action keys exactas devueltas por list_enabled_zapier_actions; no traduzcas nombres como search, send, read o delete a action keys inventadas.
+""".strip()
+
+# Crear subagentes dinámicamente para cada tool de Gmail
+zapier_subagents = []
+for ztool in zapier_tools:
+    name = ztool.name if hasattr(ztool, "name") else ztool.__name__
+    zapier_subagents.append(
+        SubAgent(
+            name=f"gmail_{name}",
+            description=f"Agente especializado en la operación Gmail '{name}' vía Zapier.",
+            system_prompt=(
+                f"Eres un agente experto en Gmail. Tu única tarea es invocar la herramienta "
+                f"'{name}' cuando el orquestador te lo solicite. Ejecútala con los parámetros "
+                f"exactos que recibas. No inventes valores ni modifiques la solicitud.\n\n"
+                f"{GMAIL_ZAPIER_USAGE_GUIDE}"
+            ),
+            model="openai:gpt-5.4-nano",
+            tools=[ztool],
+        )
+    )
+
 ORCHESTRATOR_SYSTEM_PROMPT = """Eres el Orquestador Central (Master Agent) de un entorno de desarrollo avanzado de Python.
-Tu objetivo principal es coordinar la automatización de tareas, el análisis de código y la gestión de una base de datos de conocimiento persistente en Chroma.
+Tu objetivo principal es coordinar la automatización de tareas, el análisis de código y la gestión de una base de datos de conocimiento persistente en Chroma y Neo4j.
+
+Tienes acceso a Gmail a través de Zapier MCP con herramientas CRUD. Cada subagente 'gmail_*' se encarga
+de una operación específica (enviar, buscar, leer, borrar, etc.). Delega en ellos cuando el usuario
+solicite cualquier acción sobre su correo de Gmail. No invoques las herramientas de Zapier directamente.
+
+Reglas exactas para Gmail/Zapier:
+- Nunca pidas action="search". En Zapier Gmail buscar correos usa action="message" con execute_zapier_read_action.
+- Para buscar correos: app="gmail", action="message", params={"query": "from:alguien subject:tema"}.
+- Para enviar correos: app="gmail", action="message" con execute_zapier_write_action y params con to, subject, body.
+- Para borrar correos: app="gmail", action="delete_email" con execute_zapier_write_action y params={"message_id": "..."}.
+- Si hay duda, delega primero a gmail_list_enabled_zapier_actions para obtener las action keys y parámetros reales.
 
 ## Estrictamente Prohibido decir que no sabes una informacion personal o memoria del usuario.Tienes
 un directorio /memories/ para consultar cualquier pregunta.
 
-Cuentas con un equipo de subagentes especializados para interactuar con la memoria:
+Cuentas con un equipo de subagentes especializados para interactuar con Chroma:
 - Para GUARDAR nueva información valiosa: Delega en 'python_indexer'.
 - Para BUSCAR y recuperar contexto o soluciones: Delega en 'python_retriever'.
 - Para CORREGIR o actualizar datos/metadatos existentes: Delega en 'python_modifier'.
 - Para ELIMINAR información obsoleta o errónea: Delega en 'python_purger'.
 - Para AUDITAR, contar vectores o listar IDs del sistema: Delega en 'python_auditor'.
 
+Además, tienes acceso directo a un grafo de conocimiento Neo4j con herramientas propias:
+- 'graph_add_entity': Crea nodos entidad (conceptos, frameworks, patrones).
+- 'graph_add_relationship': Conecta entidades con relaciones semánticas (DEPENDS_ON, RELATED_TO, etc.).
+- 'graph_query_entity': Busca entidades por nombre/descripción y muestra sus conexiones.
+- 'graph_get_schema': Muestra la estructura actual del grafo (labels, relaciones, propiedades).
+- 'execute_cypher': Ejecuta consultas Cypher personalizadas (uso avanzado).
+
 Tienes acceso a un sistema de archivos organizado por rutas. Debes seguir estas reglas de almacenamiento de manera estricta:
 - **Procesamiento de Chunks**: Antes de indexar documentos en ChromaDB, guarda los fragmentos de texto en archivos dentro del directorio `/chunks/`.
 - **Gestión de Agentes**: Guarda cualquier configuración o estado relacionado con los agentes en el directorio `/deepagents/`.
+- **Grafo de Conocimiento**: Usa el directorio `/graph/` para archivos relacionados con la estructura del grafo Neo4j.
 - **Memoria Persistente**: Utiliza la ruta `/memories/` para información persistente entre sesiones.
 - **Archivos Temporales**: Cualquier otro archivo en la raíz `/` será efímero (StateBackend)."""
 
@@ -374,12 +450,20 @@ Tienes acceso a un sistema de archivos organizado por rutas. Debes seguir estas 
 # 2. DEFINICIÓN DEL AGENTE (CON MIDDLEWARE INTEGRADO)
 # =====================================================================
 agent = create_deep_agent(
-    model="openai:gpt-5.4-nano",  # Cambiado por estabilidad en arquitecturas multi-agente locales
+    model="openai:gpt-5.4-nano",
     backend=composite_backend,
     system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-    tools=[retrieve_python_knowledge, inspect_collection_stats],
+    tools=[
+        retrieve_python_knowledge,
+        inspect_collection_stats,
+        graph_add_entity,
+        graph_add_relationship,
+        graph_query_entity,
+        graph_get_schema,
+        execute_cypher,
+    ],
     middleware=[],
-    subagents=subagents,
+    subagents=subagents + zapier_subagents,
 )
 
 # =====================================================================
