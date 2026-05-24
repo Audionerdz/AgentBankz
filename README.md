@@ -1,11 +1,23 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.12+-blue?logo=python" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/python-3.12+-blue?logo=python" alt="Python 3.12+" title="⚠️ Experimental">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
   <img src="https://img.shields.io/badge/built%20with-uv-black?logo=uv" alt="Built with uv">
   <img src="https://img.shields.io/badge/ollama-qwen3--embedding-8A2BE2" alt="Ollama">
 </p>
 
 <h1 align="center">AgentVault</h1>
+
+<blockquote>
+  <strong>⚠️ Personal Experiment — From a simple ChromaDB CRUD agent to a full multi-agent architecture.</strong>
+</blockquote>
+
+<p>
+  <strong>Where it started:</strong> I built an agent with full CRUD access to ChromaDB (index, retrieve, update, delete, inspect). Then I added a Gmail agent connected via Zapier MCP. The result worked, but swapping agents and tools meant touching Python code every time.
+</p>
+
+<p>
+  <strong>Where it's going:</strong> A <strong>YAML-driven architecture</strong> where you define orchestrators, subagents, tools, and backends declaratively — zero Python changes to add or swap agents. Everything runs in Docker with a visible frontend, ChromaDB vector RAG, Zapier MCP integrations, and a composite Postgres + Filesystem backend.
+</p>
 
 <p align="center">
   <strong>YAML-driven multi-agent orchestration</strong> — ChromaDB RAG, Gmail automation via Zapier MCP, and a composite Postgres + Filesystem backend. Built on LangGraph + deepagents.
