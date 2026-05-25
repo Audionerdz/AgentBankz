@@ -1,6 +1,6 @@
-# AgentBankz — Beginner's Guide
+# DeepAgents Playground — Beginner's Guide
 
-> Everything you need to know to extend, modify, and understand this repo.
+> Everything you need to know to extend, modify, and understand the playground.
 
 ---
 
@@ -9,10 +9,10 @@
 1. [How the YAML Config Works](#1-how-the-yaml-config-works)
 2. [How to Add a New Tool](#2-how-to-add-a-new-tool)
 3. [How to Add a New Static SubAgent](#3-how-to-add-a-new-static-subagent)
-4. [How to Add a New Dynamic SubAgent Source](#4-how-to-add-a-new-dynamic-subagent-source)
+4. [How to Add a New MCP Server (Dynamic SubAgent Source)](#4-how-to-add-a-new-mcp-server-dynamic-subagent-source)
 5. [How to Add a New Orchestrator](#5-how-to-add-a-new-orchestrator)
 6. [How to Assign a SubAgent to Any Orchestrator](#6-how-to-assign-a-subagent-to-any-orchestrator)
-7. [How the Wildcard gmail: Works](#7-how-the-wildcard-gmail-works)
+7. [How the Wildcard prefix:* Works](#7-how-the-wildcard-prefix-works)
 8. [How to Change the LLM Model](#8-how-to-change-the-llm-model)
 9. [How to Add a New Environment Variable](#9-how-to-add-a-new-environment-variable)
 10. [How to Add a New Backend](#10-how-to-add-a-new-backend)
@@ -210,100 +210,135 @@ That's it. No new Python classes, no new imports in `main.py`.
 
 ---
 
-## 4. How to Add a New Dynamic SubAgent Source
+## 4. How to Add a New MCP Server (Dynamic SubAgent Source)
 
 Dynamic subagents are created at **runtime** from tools discovered by an external MCP server.
+The architecture uses a **3-layer contract** to keep each new MCP source minimal:
 
-### Example: Add Slack MCP tools as subagents
-
-**Step 1:** Create a builder function
-
-Create `src/agentbankz/agents/slack.py`:
-
-```python
-from typing import Any
-from deepagents.middleware.subagents import SubAgent
-
-
-def build_slack_subagents(slack_tools: list[Any], model: str) -> list[SubAgent]:
-    subagents: list[SubAgent] = []
-
-    for tool in slack_tools:
-        name = tool.name if hasattr(tool, "name") else tool.__name__
-        subagents.append(
-            SubAgent(
-                name=f"slack_{name}",
-                description=f"Slack operation '{name}' via MCP.",
-                system_prompt=(
-                    f"You are a Slack expert. Your only task is to invoke the "
-                    f"'{name}' tool when the orchestrator requests it. "
-                    f"Execute it with the exact parameters you receive.\n\n"
-                    f"Mandatory rules for Slack:\n"
-                    f"- Use the exact action keys provided.\n"
-                    f"- Do not invent parameters.\n"
-                ),
-                model=model,
-                tools=[tool],
-            )
-        )
-
-    return subagents
+```
+Layer 1: tools/<name>.py      — MCPConnectionConfig + create function (~5 lines)
+Layer 2: agents/<name>.py     — USAGE_GUIDE string only
+Layer 3: loader.py, YAML      — MCP_SOURCE_MAP entry + subagents.yml + orchestrators.yml
 ```
 
-**Step 2:** Create a Slack tool factory
+### Step-by-step: Add a Slack MCP server
 
-Create `src/agentbankz/tools/slack.py`:
+**Step 1:** Create `src/agentbankz/tools/slack.py`
 
 ```python
-# Slack MCP tool creation (similar to tools/zapier.py)
+from .mcp_adapter import MCPConnectionConfig, MCPToolAdapter
+
+SLACK_CONFIG = MCPConnectionConfig(
+    name="slack",
+    url="https://slack-mcp.example.com/mcp/",
+    token_env_var="SLACK_BOT_TOKEN",
+)
+
+def create_slack_tools() -> list:
+    adapter = MCPToolAdapter(SLACK_CONFIG)
+    return adapter.create_langchain_tools()
 ```
 
-**Step 3:** Register the new `source:` type in the loader
+The `MCPConnectionConfig` dataclass accepts:
+- `name` — unique identifier for this source
+- `url` — MCP server endpoint URL
+- `token_env_var` — env var name for the bearer token (optional)
+- `headers` — extra HTTP headers (optional)
+- `verify` — SSL verification: `True` (default), `False` (skip), or a path to a CA bundle
+
+**Step 2:** Create `src/agentbankz/agents/slack.py`
+
+```python
+SLACK_USAGE_GUIDE = """Rules for Slack:
+
+  slack_send_message(channel: str, text: str) — Post a message to a channel
+  slack_list_channels(limit: int) — List public channels
+  ...
+
+## Rules
+- Use exact channel names as they appear in Slack
+- ...
+"""
+```
+
+**Step 3:** Register in `MCP_SOURCE_MAP`
 
 In `src/agentbankz/agents/loader.py`:
 
 ```python
-from agentbankz.agents.slack import build_slack_subagents
+from agentbankz.agents.slack import SLACK_USAGE_GUIDE
 
-def build_all_subagents(config, tool_map, zapier_tools, slack_tools=None):
-    ...
-    for name, item in config.get("subagents", {}).items():
-        source = item.get("source", "static")
-
-        if source == "static":
-            ...
-
-        elif source == "dynamic:zapier":
-            for sa in build_gmail_subagents(zapier_tools, default_model):
-                subagents[sa["name"]] = sa
-
-        elif source == "dynamic:slack":
-            for sa in build_slack_subagents(slack_tools or [], default_model):
-                subagents[sa["name"]] = sa
-
-    return subagents
+MCP_SOURCE_MAP: dict[str, dict[str, Any]] = {
+    "zapier": {"guide": GMAIL_ZAPIER_USAGE_GUIDE, "prefix": "gmail"},
+    "obsidian": {"guide": OBSIDIAN_USAGE_GUIDE, "prefix": "obsidian"},
+    "slack": {"guide": SLACK_USAGE_GUIDE, "prefix": "slack"},   # ← add this
+}
 ```
 
-**Step 4:** Add to YAML
+**Step 4:** Add YAML entry
 
-In `agents/subagents.yml`:
+In `src/agentbankz/agents/subagents.yml`:
 
 ```yaml
-subagents:
   slack:
-    source: dynamic:slack
+    source: dynamic:mcp
+    mcp_name: slack
     description: "Slack agents dynamically generated from Slack MCP tools"
+    model: "openai:gpt-4o-mini"
 ```
 
-**Step 5:** Pass slack tools in `main.py`
+**Step 5:** Add to orchestrator
+
+In `src/agentbankz/agents/orchestrators.yml`:
+
+```yaml
+orchestrators:
+  main:
+    subagents:
+      - slack:*                       # ← wildcard includes all slack_* subagents
+    system_prompt: |
+      ...
+      Slack tools:
+        slack_send_message — Post messages to channels
+        slack_list_channels — List public channels
+      ...
+```
+
+**Step 6:** Initialize tools in `main.py`
 
 ```python
-slack_tools = create_slack_tools()  # your function
-OrchestratorFactory(
-    zapier_tools=zapier_tools,
-    slack_tools=slack_tools,
-).build_all(backend_map)
+from agentbankz.tools.slack import create_slack_tools
+
+try:
+    slack_tools = create_slack_tools()
+    print(f"[INFO] Slack MCP conectado — {len(slack_tools)} herramientas disponibles.")
+    mcp_tools_map["slack"] = slack_tools
+except Exception as e:
+    print(f"[WARN] No se pudo conectar Slack MCP: {e}")
+
+orchestrator_factory = OrchestratorFactory(mcp_tools_map=mcp_tools_map)
 ```
+
+### Architecture: How the generic adapter works
+
+`tools/mcp_adapter.py` provides:
+
+| Class / Function | Purpose |
+|---|---|
+| `MCPConnectionConfig` | Dataclass holding URL, auth, SSL settings for one MCP server |
+| `MCPToolAdapter` | Connects, discovers tools, wraps them as `StructuredTool` (LangChain) |
+| `_pythonize_name()` | Converts `:`, `-` in MCP tool names to `_` |
+| `_generate_docstring()` | Auto-generates docstring from MCP tool schema |
+| `_create_args_schema()` | Creates Pydantic model from JSON Schema |
+
+The adapter handles:
+- Async event loop in a daemon thread (one per source)
+- Bearer token auth from env vars
+- SSL verification (can be disabled via `verify=False`)
+- Streaming HTTP transport via `fastmcp`
+- Auto-generated LangChain `StructuredTool` wrappers
+
+The generic builder `agents/mcp_builder.py::build_mcp_subagents()` creates one `SubAgent` per tool with naming `{prefix}_{tool_name}`, injecting the `USAGE_GUIDE` into each subagent's system prompt. This is shared by ALL MCP sources — no per-source builder function needed.
 
 ---
 
@@ -403,7 +438,7 @@ subagents:
 
 ---
 
-## 7. How the Wildcard `gmail:*` Works
+## 7. How the Wildcard `prefix:*` Works
 
 The `:*` suffix is a shorthand to include all subagents whose names start with that prefix.
 
@@ -426,17 +461,22 @@ if name.endswith(":*"):
     )
 ```
 
-This is why `build_gmail_subagents()` names its subagents `gmail_<tool_name>` — so they match `gmail:*`.
+This is why `build_mcp_subagents()` in `agents/mcp_builder.py` names subagents `{prefix}_{tool_name}`:
+- `prefix="gmail"` → `gmail_message`, `gmail_delete_email`, etc.
+- `prefix="obsidian"` → `obsidian_vault_read`, `obsidian_vault_write`, etc.
 
-**You can create your own wildcard pattern** by making sure your builder function uses the correct prefix:
+**You can create your own wildcard pattern** by setting the `prefix` in `MCP_SOURCE_MAP`:
 
 ```python
-# In your builder:
-SubAgent(name=f"slack_{tool.name}", ...)
+MCP_SOURCE_MAP = {
+    "slack": {"guide": SLACK_USAGE_GUIDE, "prefix": "slack"},
+}
+```
 
+```yaml
 # In YAML:
 subagents:
-  - slack:*
+  - slack:*       # matches slack_send_message, slack_list_channels, ...
 ```
 
 ---
@@ -568,7 +608,7 @@ from .s3 import S3Backend
 class BackendFactory:
     def build_all(self) -> dict[str, Any]:
         s3_backend = S3Backend(
-            bucket=os.getenv("S3_BUCKET", "agentbankz-data"),
+            bucket=os.getenv("S3_BUCKET", "deepagents-playground-data"),
             prefix="memories/",
         )
         return {
@@ -855,10 +895,12 @@ If your orchestrator needs a completely different storage strategy, create a new
 | Change the orchestrator system prompt | `src/agentbankz/agents/orchestrators.yml` |
 | Change the default model | `src/agentbankz/agents/defaults.yml` |
 | Override model per orchestrator | `src/agentbankz/agents/orchestrators.yml` |
-| Add a dynamic MCP source (Slack, etc.) | Create `agents/<name>.py` + update `loader.py` |
+| Add a new MCP server source | Create `tools/<name>.py` (config) + `agents/<name>.py` (guide) + update `loader.py` (MCP_SOURCE_MAP) + `main.py` |
 | Add a new storage backend | Create `backends/<name>.py` + update `backends/factory.py` |
 | Change the entry point | `main.py` (~7 lines, rarely touched) |
-| Change Zapier connection behavior or tool schema handling | `src/agentbankz/tools/zapier.py` |
-| Change Gmail subagent prompts | `src/agentbankz/agents/gmail.py` |
+| Change MCP adapter behavior (all sources) | `src/agentbankz/tools/mcp_adapter.py` |
+| Change Zapier connection | `src/agentbankz/tools/zapier.py` |
+| Change Gmail subagent prompts | `src/agentbankz/agents/gmail.py` (GMAIL_ZAPIER_USAGE_GUIDE) |
+| Change Obsidian subagent prompts | `src/agentbankz/agents/obsidian.py` (OBSIDIAN_USAGE_GUIDE) |
 | Add a dependency | `pyproject.toml` (then `uv sync`) |
 | Add a secret | `.env` |

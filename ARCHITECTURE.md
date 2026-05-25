@@ -1,13 +1,13 @@
-# AgentBankz Architecture Guide
+# DeepAgents Playground — Architecture Guide
 
-> A comprehensive reference for extending, modifying, and scaling the AgentBankz multi-agent system.
+> A comprehensive reference for extending, modifying, and scaling the YAML-driven multi-agent playground.
 
 ---
 
 ## 1. Repository Map
 
 ```
-AgentBankz/
+DeepAgents-Playground/
 │
 ├── main.py                              # Entry point — 7 lines of orchestration logic
 ├── pyproject.toml                       # Build config (setuptools, src/ layout)
@@ -320,7 +320,7 @@ class S3Backend:
 In `backends/factory.py`:
 
 ```python
-s3_backend = S3Backend(bucket="agentbankz-data", prefix="memories/")
+s3_backend = S3Backend(bucket="deepagents-playground-data", prefix="memories/")
 backend_map["composite"] = CompositeBackend(
     routes={
         "/memories/": s3_backend,
@@ -457,7 +457,9 @@ If `defaults.yml` or `subagents.yml` are missing, `load_agent_configs()` falls b
 | `agents/orchestrators.yml` | Orchestrator definitions | Adding/removing orchestrators |
 | `agents/loader.py` | YAML → SubAgent resolution | Adding new `source:` types |
 | `agents/orchestrator_factory.py` | `create_deep_agent()` from config | Adding new orchestrator features |
-| `agents/gmail.py` | Gmail SubAgent builder | Changing Gmail behavior |
+| `agents/gmail.py` | Gmail usage guide | Changing Gmail MCP prompts |
+| `agents/obsidian.py` | Obsidian usage guide | Changing Obsidian MCP prompts |
+| `agents/mcp_builder.py` | Generic MCP SubAgent builder | Changing how MCP subagents are generated |
 | `backends/factory.py` | Backend construction | Adding new storage backends |
 | `backends/postgres.py` | PostgreSQL backend | Changing PG behavior |
 | `tools/knowledge.py` | ChromaDB tool functions | Adding/modifying RAG tools |
