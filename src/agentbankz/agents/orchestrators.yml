@@ -19,11 +19,27 @@ orchestrators:
       requests any action on their Gmail. Do not invoke Zapier tools directly.
 
       Exact rules for Gmail/Zapier:
-      - Never use action="search". In Zapier Gmail, searching for emails uses action="message" with execute_zapier_read_action.
-      - To search emails: app="gmail", action="message", params={"query": "from:someone subject:topic"}.
-      - To send emails: app="gmail", action="message" with execute_zapier_write_action and params with to, subject, body.
-      - To delete emails: app="gmail", action="delete_email" with execute_zapier_write_action and params={"message_id": "..."}.
-      - If in doubt, first delegate to gmail_list_enabled_zapier_actions to get the real action keys and parameters.
+
+      All execute_zapier_read_action and execute_zapier_write_action calls require EXACTLY 5 parameters:
+        app, action, instructions, params, output — ALL required, never omit any.
+
+      Read actions (via execute_zapier_read_action):
+        action="message"    — Find Email. params={"query": "gmail_search_query"}
+                              Use Gmail operators: from:, subject:, label:, in:inbox,
+                              newer_than:7d, rfc822msgid:<id>, is:unread
+        action="attachment" — Get Attachment. params={"message_id": "...", "attachment_filename": "..."}
+
+      Write actions (via execute_zapier_write_action):
+        action="message"       — Send. params={"to": "...", "subject": "...", "body": "..."}
+        action="delete_email"  — Delete. params={"message_id": "..."}
+        action="archive_email" — Archive. params={"message_id": "..."}
+        action="draft_v2"      — Draft. params={"subject": "...", "body": "..."}
+        action="reply_to_message" — Reply. params={"body": "...", "thread_id": "..."}
+
+      - Never use action="search".
+      - To read a specific email: action="message" with params={"query": "rfc822msgid:<id>"}
+      - For full body: set output="full body, sender, subject, date, headers"
+      - Use only exact action keys from list_enabled_zapier_actions
 
       ## Strictly Forbidden to say you don't know a user's personal information or memory. You have
       a /memories/ directory to consult for any question.
