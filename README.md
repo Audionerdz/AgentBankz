@@ -10,16 +10,16 @@
 <blockquote>
   <strong>⚡ YAML-driven multi-agent playground</strong> — swap backends, tools, prompts, subagents, and orchestrators without touching Python.
   <br><br>
-  El objetivo es convertir este repositorio en un <strong>banco de referencia</strong> para construir miles de aplicaciones DeepAgents para diferentes casos de uso. Aquí encuentras:
+  The goal is to build this repo into a <strong>reference bank</strong> for creating thousands of DeepAgents applications across different use cases. Here you'll find:
   <br><br>
-  <strong>🧰 Tools</strong> — funciones con el formato correcto <code>@tool</code> de LangChain listas para usar<br>
-  <strong>🤖 SubAgents</strong> — pre-construidos con prompts, tools y modelos asignados<br>
-  <strong>🗄️ Backends</strong> — implementaciones de storage (Postgres, Filesystem, S3, State)<br>
-  <strong>⚙️ Configuraciones</strong> — listas YAML pre-construidas para orchestrators, subagents y MCP servers<br>
-  <strong>📓 Notebooks</strong> — ejemplos prácticos de DeepAgents para aprendizaje rápido<br>
-  <strong>🔌 MCP Servers</strong> — integraciones listas para conectar (Zapier, Obsidian, y más)
+  <strong>🧰 Tools</strong> — LangChain <code>@tool</code>-decorated functions ready to use<br>
+  <strong>🤖 SubAgents</strong> — pre-built with prompts, tools, and models assigned<br>
+  <strong>🗄️ Backends</strong> — storage implementations (Postgres, Filesystem, S3, State)<br>
+  <strong>⚙️ Configs</strong> — pre-built YAML configs for orchestrators, subagents, and MCP servers<br>
+  <strong>📓 Notebooks</strong> — practical DeepAgents examples for quick learning<br>
+  <strong>🔌 MCP Servers</strong> — ready-to-connect integrations (Zapier, Obsidian, and more)
   <br><br>
-  Todo basado en la librería <a href="https://github.com/DiTo97/deepagents">Deep Agents</a> de LangGraph.
+  All powered by the <a href="https://github.com/DiTo97/deepagents">Deep Agents</a> library from LangGraph.
 </blockquote>
 
 <p align="center">
