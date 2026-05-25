@@ -4,7 +4,9 @@ from typing import Any
 import yaml
 from deepagents.middleware.subagents import SubAgent
 
-from agentbankz.agents.gmail import build_gmail_subagents
+from agentbankz.agents.mcp_builder import build_mcp_subagents
+from agentbankz.agents.gmail import GMAIL_ZAPIER_USAGE_GUIDE
+from agentbankz.agents.obsidian import OBSIDIAN_USAGE_GUIDE
 from agentbankz.tools.knowledge import (
     delete_python_knowledge,
     index_python_chunk,
@@ -20,6 +22,17 @@ STATIC_TOOL_MAP = {
     "delete_python_knowledge": delete_python_knowledge,
     "update_or_upsert_knowledge": update_or_upsert_knowledge,
     "inspect_collection_stats": inspect_collection_stats,
+}
+
+MCP_SOURCE_MAP: dict[str, dict[str, Any]] = {
+    "zapier": {
+        "guide": GMAIL_ZAPIER_USAGE_GUIDE,
+        "prefix": "gmail",
+    },
+    "obsidian": {
+        "guide": OBSIDIAN_USAGE_GUIDE,
+        "prefix": "obsidian",
+    },
 }
 
 
@@ -83,9 +96,10 @@ def load_agent_configs(
 def build_all_subagents(
     config: dict[str, Any],
     tool_map: dict[str, Any],
-    zapier_tools: list[Any],
+    mcp_tools_map: dict[str, list[Any]] | None = None,
 ) -> dict[str, SubAgent]:
     default_model = config.get("model", "openai:gpt-5.4-nano")
+    mcp_tools_map = mcp_tools_map or {}
     subagents: dict[str, SubAgent] = {}
 
     for name, item in config.get("subagents", {}).items():
@@ -101,9 +115,17 @@ def build_all_subagents(
                 tools=tools,
             )
 
-        elif source == "dynamic:zapier":
+        elif source == "dynamic:mcp":
+            mcp_name = item.get("mcp_name", name)
             model = item.get("model", default_model)
-            for sa in build_gmail_subagents(zapier_tools, model):
+            mcp_cfg = MCP_SOURCE_MAP.get(mcp_name, {})
+            tools = mcp_tools_map.get(mcp_name, [])
+            for sa in build_mcp_subagents(
+                tools=tools,
+                prefix=mcp_cfg.get("prefix", mcp_name),
+                model=model,
+                usage_guide=mcp_cfg.get("guide", ""),
+            ):
                 subagents[sa["name"]] = sa
 
     return subagents

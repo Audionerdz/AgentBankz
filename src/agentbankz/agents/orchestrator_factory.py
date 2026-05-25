@@ -18,12 +18,21 @@ class OrchestratorFactory:
         config_dir: str | Path | None = None,
         tool_map: dict[str, Any] | None = None,
         zapier_tools: list[Any] | None = None,
+        mcp_tools_map: dict[str, list[Any]] | None = None,
     ) -> None:
         config_dir = config_dir or Path(__file__).parent
         self.config = load_agent_configs(config_dir)
         self.tool_map = {**STATIC_TOOL_MAP, **(tool_map or {})}
+        self.mcp_tools_map = dict(mcp_tools_map or {})
+        if zapier_tools is not None:
+            self.mcp_tools_map.setdefault("zapier", zapier_tools)
+        # Flatten MCP tools into tool_map for direct name-based resolution
+        for tools_list in self.mcp_tools_map.values():
+            for tool in tools_list:
+                name = tool.name if hasattr(tool, "name") else str(tool)
+                self.tool_map[name] = tool
         self.subagent_map = build_all_subagents(
-            self.config, self.tool_map, zapier_tools or []
+            self.config, self.tool_map, self.mcp_tools_map
         )
 
     def build_one(self, name: str, backend: Any, **overrides: Any) -> Any:
@@ -32,11 +41,28 @@ class OrchestratorFactory:
             raise KeyError(f"Orchestrator '{name}' does not exist in orchestrators.yml")
 
         config = {**orchestrators[name], **overrides}
+
+        raw_tools = config.get("tools", [])
+        expanded_tools: list[str] = []
+        for t in raw_tools:
+            if isinstance(t, str) and t.endswith(":*"):
+                mcp_name = t[:-2]
+                if mcp_name not in self.mcp_tools_map:
+                    raise KeyError(
+                        f"MCP source '{mcp_name}' for tool wildcard '{t}' is "
+                        f"not registered. Available: {list(self.mcp_tools_map)}"
+                    )
+                expanded_tools.extend(
+                    tool.name for tool in self.mcp_tools_map[mcp_name]
+                )
+            else:
+                expanded_tools.append(t)
+
         return create_deep_agent(
             model=config["model"],
             backend=backend,
             system_prompt=config["system_prompt"],
-            tools=resolve_tools(config.get("tools", []), self.tool_map),
+            tools=resolve_tools(expanded_tools, self.tool_map),
             middleware=config.get("middleware", []),
             subagents=self._resolve_subagents(config.get("subagents", [])),
         )

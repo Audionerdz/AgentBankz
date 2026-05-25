@@ -57,6 +57,13 @@ subagents:
       subsequent modification, or needs to debug the overall state of the local persistence.
 
   gmail:
-    source: dynamic:zapier
+    source: dynamic:mcp
+    mcp_name: zapier
     description: "Gmail agents dynamically generated from Zapier MCP tools"
+    model: "openai:gpt-4o-mini"
+
+  obsidian:
+    source: dynamic:mcp
+    mcp_name: obsidian
+    description: "Obsidian vault agents dynamically generated from Obsidian MCP tools"
     model: "openai:gpt-4o-mini"
