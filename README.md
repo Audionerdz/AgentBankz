@@ -127,17 +127,24 @@ The frontend connects automatically — no manual setup.
 
 ---
 
-## 🧰 Current Tools & MCPs
+## 🧰 Tool & SubAgent Inventory
 
-### Static Tools (LangChain `@tool`)
+### ChromaDB CRUD — 5 tools covering the full vector store lifecycle
+
+| Tool | CRUD | Description |
+|------|------|-------------|
+| `index_python_chunk` | **C**reate | Index a code/document chunk into ChromaDB with Ollama embeddings |
+| `retrieve_python_knowledge` | **R**ead | Semantic search over the Python knowledge base |
+| `update_or_upsert_knowledge` | **U**pdate | Update content or metadata of an existing document |
+| `delete_python_knowledge` | **D**elete | Delete documents by ID or metadata filter |
+| `inspect_collection_stats` | Inspect | Count vectors, list IDs, inspect metadata |
+
+### GitHub Repository Analysis
 
 | Tool | Description |
 |------|-------------|
-| `index_python_chunk` | Index a code chunk into ChromaDB with Ollama embeddings |
-| `retrieve_python_knowledge` | Semantic search over the Python knowledge base |
-| `update_or_upsert_knowledge` | Update or insert an existing document in ChromaDB |
-| `delete_python_knowledge` | Delete documents by ID or filter |
-| `inspect_collection_stats` | Inspect ChromaDB collection statistics |
+| `list_repo_files` | Display directory tree of any public GitHub repository |
+| `fetch_github_file` | Fetch raw content of a specific file from a GitHub repo |
 
 ### MCP Servers
 
@@ -169,6 +176,19 @@ The frontend connects automatically — no manual setup.
 | `command_list` | List all registered Obsidian commands |
 | `command_execute` | Execute an Obsidian command by ID |
 | `open_file` | Open a file in the Obsidian UI |
+
+### SubAgents
+
+| SubAgent | Source | Tools | Description |
+|----------|--------|-------|-------------|
+| `python_indexer` | static | `index_python_chunk` | Index code fragments into ChromaDB |
+| `python_retriever` | static | `retrieve_python_knowledge`, `inspect_collection_stats` | Semantic search over stored knowledge |
+| `python_modifier` | static | `update_or_upsert_knowledge` | Correct or enrich existing records |
+| `python_purger` | static | `delete_python_knowledge` | Delete obsolete or duplicate records |
+| `python_auditor` | static | `inspect_collection_stats` | Inspect collection count, IDs, metadata |
+| `github_researcher` | static | `list_repo_files`, `fetch_github_file` | Explore and analyze GitHub repositories |
+| `gmail:*` | dynamic MCP | auto-discovered from Zapier | One subagent per Gmail operation |
+| `obsidian:*` | dynamic MCP | auto-discovered from Obsidian | One subagent per vault operation |
 
 ---
 
