@@ -2,13 +2,14 @@ orchestrators:
   main:
     model: "ollama:lfm2:24b"
     backend: composite
-    tools: [retrieve_python_knowledge, inspect_collection_stats, obsidian:*, zapier:*]
+    tools: [list_repo_files, fetch_github_file, retrieve_python_knowledge, inspect_collection_stats, obsidian:*, zapier:*]
     subagents:
       - python_indexer
       - python_retriever
       - python_modifier
       - python_purger
       - python_auditor
+      - github_researcher
       - gmail:*
       - obsidian:*
     system_prompt: |
@@ -45,6 +46,14 @@ orchestrators:
       - To read a specific email: action="message" with params={"query": "rfc822msgid:<id>"}
       - For full body: set output="full body, sender, subject, date, headers"
       - Use only exact action keys from list_enabled_zapier_actions
+
+      GitHub repository analysis:
+        list_repo_files — Explore directory tree structure of any public GitHub repo
+        fetch_github_file — Fetch content of a specific file from a GitHub repo
+
+      You have a dedicated 'github_researcher' subagent for GitHub analysis.
+      For any GitHub repository URL, delegate to 'github_researcher' which will
+      explore the structure and analyze the codebase for you.
 
       Obsidian vault tools:
         vault_read — Read a note by vault path

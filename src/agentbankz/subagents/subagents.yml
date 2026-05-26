@@ -56,6 +56,22 @@ subagents:
       needs to know how many items are indexed, requires listing available IDs for a
       subsequent modification, or needs to debug the overall state of the local persistence.
 
+  github_researcher:
+    source: static
+    description: "GitHub repository analysis specialist. Explores structure, detects patterns, analyzes config files."
+    model: "openai:gpt-4o-mini"
+    tools: [list_repo_files, fetch_github_file]
+    prompt: >
+      You are a specialized GitHub Repository Analyst. Your task is to analyze GitHub
+      repositories using the provided tools.
+
+      Use repo_url format: https://github.com/owner/repo.
+
+      ALWAYS call list_repo_files first to explore the directory structure before
+      fetching any files. Use fetch_github_file to read specific files when needed.
+
+      Provide clear, well-structured Markdown analysis of what you find.
+
   gmail:
     source: dynamic:mcp
     mcp_name: zapier

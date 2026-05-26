@@ -7,6 +7,7 @@ from deepagents.middleware.subagents import SubAgent
 from agentbankz.subagents.mcp_builder import build_mcp_subagents
 from agentbankz.subagents.gmail import GMAIL_ZAPIER_USAGE_GUIDE
 from agentbankz.subagents.obsidian import OBSIDIAN_USAGE_GUIDE
+from agentbankz.tools.github import fetch_github_file, list_repo_files
 from agentbankz.tools.knowledge import (
     delete_python_knowledge,
     index_python_chunk,
@@ -22,6 +23,8 @@ STATIC_TOOL_MAP = {
     "delete_python_knowledge": delete_python_knowledge,
     "update_or_upsert_knowledge": update_or_upsert_knowledge,
     "inspect_collection_stats": inspect_collection_stats,
+    "list_repo_files": list_repo_files,
+    "fetch_github_file": fetch_github_file,
 }
 
 MCP_SOURCE_MAP: dict[str, dict[str, Any]] = {
