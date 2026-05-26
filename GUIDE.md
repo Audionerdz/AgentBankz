@@ -216,14 +216,14 @@ Dynamic subagents are created at **runtime** from tools discovered by an externa
 The architecture uses a **3-layer contract** to keep each new MCP source minimal:
 
 ```
-Layer 1: tools/<name>.py      — MCPConnectionConfig + create function (~5 lines)
+Layer 1: mcp/<name>.py      — MCPConnectionConfig + create function (~5 lines)
 Layer 2: subagents/<name>.py     — USAGE_GUIDE string only
 Layer 3: subagents/loader.py, YAML — MCP_SOURCE_MAP entry + subagents/subagents.yml + orchestrators/orchestrators.yml
 ```
 
 ### Step-by-step: Add a Slack MCP server
 
-**Step 1:** Create `src/agentbankz/tools/slack.py`
+**Step 1:** Create `src/agentbankz/mcp/slack.py`
 
 ```python
 from .mcp_adapter import MCPConnectionConfig, MCPToolAdapter
@@ -321,7 +321,7 @@ orchestrator_factory = OrchestratorFactory(mcp_tools_map=mcp_tools_map)
 
 ### Architecture: How the generic adapter works
 
-`tools/mcp_adapter.py` provides:
+`mcp/mcp_adapter.py` provides:
 
 | Class / Function | Purpose |
 |---|---|
@@ -895,11 +895,9 @@ If your orchestrator needs a completely different storage strategy, create a new
 | Change the orchestrator system prompt | `src/agentbankz/orchestrators/orchestrators.yml` |
 | Change the default model | `src/agentbankz/orchestrators/defaults.yml` |
 | Override model per orchestrator | `src/agentbankz/orchestrators/orchestrators.yml` |
-| Add a new MCP server source | Create `tools/<name>.py` (config) + `subagents/<name>.py` (guide) + update `subagents/loader.py` (MCP_SOURCE_MAP) + `main.py` |
-| Add a new storage backend | Create `backends/<name>.py` + update `backends/factory.py` |
-| Change the entry point | `main.py` (~7 lines, rarely touched) |
-| Change MCP adapter behavior (all sources) | `src/agentbankz/tools/mcp_adapter.py` |
-| Change Zapier connection | `src/agentbankz/tools/zapier.py` |
+| Add a new MCP server source | Create `mcp/<name>.py` (config) + `subagents/<name>.py` (guide) + update `subagents/loader.py` (MCP_SOURCE_MAP) + `main.py` |
+| Change MCP adapter behavior (all sources) | `src/agentbankz/mcp/mcp_adapter.py` |
+| Change Zapier connection | `src/agentbankz/mcp/zapier.py` |
 | Change Gmail subagent prompts | `src/agentbankz/subagents/gmail.py` (GMAIL_ZAPIER_USAGE_GUIDE) |
 | Change Obsidian subagent prompts | `src/agentbankz/subagents/obsidian.py` (OBSIDIAN_USAGE_GUIDE) |
 | Add a dependency | `pyproject.toml` (then `uv sync`) |

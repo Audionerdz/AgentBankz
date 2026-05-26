@@ -4,8 +4,8 @@ import sys
 
 from agentbankz.orchestrators import OrchestratorFactory
 from agentbankz.backends import BackendFactory
-from agentbankz.tools.obsidian import create_obsidian_tools
-from agentbankz.tools.zapier import create_zapier_tools
+from agentbankz.mcp.obsidian import create_obsidian_tools
+from agentbankz.mcp.zapier import create_zapier_tools
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE STORAGE Y BACKENDS (HÍBRIDO)

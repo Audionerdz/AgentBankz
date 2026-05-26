@@ -28,6 +28,12 @@ DeepAgents-Playground/
 │   │   ├── gmail.py                     #   Gmail usage guide constant
 │   │   └── obsidian.py                  #   Obsidian usage guide constant
 │   │
+│   ├── mcp/                            # ██ MCP ADAPTERS ██
+│   │   ├── __init__.py
+│   │   ├── mcp_adapter.py              #   MCP-to-LangChain adapter (MCPConnectionConfig, MCPToolAdapter)
+│   │   ├── obsidian.py                 #   Obsidian MCP tool factory
+│   │   └── zapier.py                   #   Zapier MCP tool factory
+│   │
 │   ├── backends/                        # ██ STORAGE BACKENDS ██
 │   │   ├── __init__.py                  #   Exports: BackendFactory
 │   │   ├── factory.py                   #   Factory: builds CompositeBackend with routing
@@ -36,9 +42,6 @@ DeepAgents-Playground/
 │   └── tools/                           # ██ TOOL IMPLEMENTATIONS ██
 │       ├── __init__.py
 │       ├── knowledge.py                 #   5 RAG tools (index, retrieve, update, delete, inspect)
-│       ├── mcp_adapter.py               #   MCP-to-LangChain adapter (MCPConnectionConfig, MCPToolAdapter)
-│       ├── obsidian.py                  #   Obsidian MCP tool factory
-│       └── zapier.py                    #   Zapier MCP tool factory
 │
 ├── data/                                # Runtime data (gitignored)
 │   ├── chroma_db/                       #   ChromaDB persistent vector store
@@ -471,5 +474,7 @@ If the split layout (`orchestrators/defaults.yml` + `orchestrators/orchestrators
 | `backends/factory.py` | Backend construction | Adding new storage backends |
 | `backends/postgres.py` | PostgreSQL backend | Changing PG behavior |
 | `tools/knowledge.py` | ChromaDB tool functions | Adding/modifying RAG tools |
-| `tools/zapier.py` | MCP client + adapter | Changing MCP transport or schema handling |
+| `mcp/mcp_adapter.py` | MCP client + adapter | Changing MCP transport or schema handling |
+| `mcp/zapier.py` | Zapier MCP tool factory | Changing Zapier connection |
+| `mcp/obsidian.py` | Obsidian MCP tool factory | Changing Obsidian connection |
 
