@@ -15,6 +15,12 @@ dependencies = [
     "langgraph-api>=0.8.7",
     "langgraph-cli>=0.4.26",
     "fastmcp>=3.3.1",
+    "fastapi>=0.136.0",
+    "uvicorn[standard]>=0.42.0",
+    "copilotkit>=0.1.91",
+    "ag-ui-langgraph>=0.0.35",
+    "langchain>=1.2.0",
+    "langgraph>=1.1.0",
 ]
 
 [build-system]
